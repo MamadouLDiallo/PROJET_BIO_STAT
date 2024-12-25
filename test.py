@@ -56,7 +56,7 @@ def split(df_transformed):
     X = df_transformed.drop("Evolution", axis=1)
     X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) 
     return X_train, X_test, y_train, y_test
-
+    st.write(X_train.columns)  # Afficher les colonnes pour vérifier les noms exacts
 # Fonction principale
 def main():
     st.title("Application de Prédiction Médicale avec DecisionTreeClassifier")
@@ -103,7 +103,6 @@ def main():
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
-    st.write(X_train.columns)  # Afficher les colonnes pour vérifier les noms exacts
 
     # Afficher les résultats
     st.subheader("Résultats")
