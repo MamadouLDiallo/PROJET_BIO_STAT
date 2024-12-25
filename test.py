@@ -59,7 +59,7 @@ def split(df_transformed):
    
 # Fonction principale
 def main():
-    st.title("Application de Prédiction Médicale avec DecisionTreeClassifier")
+    st.title("Application d'Intelligence Artificielle pour la Prédiction des Maladies à l'Aide d'un Arbre de Décision")
 
     # Charger les données
     df = load_data()
