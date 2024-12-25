@@ -103,6 +103,7 @@ def main():
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
+    st.write(X_train.columns)  # Afficher les colonnes pour vérifier les noms exacts
 
     # Afficher les résultats
     st.subheader("Résultats")
