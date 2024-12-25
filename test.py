@@ -74,24 +74,24 @@ def main():
     X_train, X_test, y_train, y_test = split(df_transformed)
 
     # Paramètres de recherche par grille
-    st.subheader("Voici les meilleurs paramettres du modèle")
-    param_grid = {
-        'max_depth': [1, 5, 10, 20],
-        'min_samples_split': [2, 5, 10, 20],
-        'min_samples_leaf': [1, 2, 5, 10]
-    }
-    grid_search = GridSearchCV(estimator=DecisionTreeClassifier(), param_grid=param_grid, cv=5)
-    grid_search.fit(X_train, y_train)
-    best_params = grid_search.best_params_
+    #st.subheader("Voici les meilleurs paramettres du modèle")
+    #param_grid = {
+      #  'max_depth': [1, 5, 10, 20],
+       # 'min_samples_split': [2, 5, 10, 20],
+       # 'min_samples_leaf': [1, 2, 5, 10]
+  #  }
+   # grid_search = GridSearchCV(estimator=DecisionTreeClassifier(), param_grid=param_grid, cv=5)
+    #grid_search.fit(X_train, y_train)
+    #best_params = grid_search.best_params_
 
-    st.sidebar.subheader("Meilleurs paramètres")
-    st.write(best_params)
+   # st.sidebar.subheader("Meilleurs paramètres")
+   # st.write(best_params)
 
     # Entraîner le modèle avec les meilleurs paramètres
     classifier = DecisionTreeClassifier(
-        max_depth=best_params["max_depth"],
-        min_samples_split=best_params["min_samples_split"],
-        min_samples_leaf=best_params["min_samples_leaf"],
+        #max_depth=best_params["max_depth"],
+        #min_samples_split=best_params["min_samples_split"],
+        #min_samples_leaf=best_params["min_samples_leaf"],
     )
     classifier.fit(X_train, y_train)
 
