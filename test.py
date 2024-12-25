@@ -86,6 +86,8 @@ def main():
 
     st.sidebar.subheader("Meilleurs paramètres")
     st.write(best_params)
+    st.write(new_data)
+
 
     # Entraîner le modèle avec les meilleurs paramètres
     classifier = DecisionTreeClassifier(
