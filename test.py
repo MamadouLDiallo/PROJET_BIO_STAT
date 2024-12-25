@@ -56,7 +56,7 @@ def split(df_transformed):
     X = df_transformed.drop("Evolution", axis=1)
     X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) 
     return X_train, X_test, y_train, y_test
-    st.write(X_train.columns)  # Afficher les colonnes pour vérifier les noms exacts
+   
 # Fonction principale
 def main():
     st.title("Application de Prédiction Médicale avec DecisionTreeClassifier")
@@ -72,6 +72,7 @@ def main():
 
     # Séparation des données
     X_train, X_test, y_train, y_test = split(df_transformed)
+    st.write(X_train.columns)  # Afficher les colonnes pour vérifier les noms exacts
 
     # Paramètres de recherche par grille
     st.subheader("Voici les meilleurs paramettres du modèle")
