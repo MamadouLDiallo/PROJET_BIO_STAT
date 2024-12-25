@@ -54,7 +54,7 @@ def transform_variables(df):
 def split(df_transformed):
     y = df_transformed["Evolution"]
     X = df_transformed.drop("Evolution", axis=1)
-    X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=42) #, stratify=y
+    X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) #, stratify=y
     return X_train, X_test, y_train, y_test
 
 # Fonction principale
