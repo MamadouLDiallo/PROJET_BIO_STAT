@@ -178,8 +178,9 @@ def main():
         result = "Décédé" if prediction == 1 else "Vivant"
 
         st.subheader("Résultat de la Prédiction")
+        st.write(f"résultat de la prédiction  : {prediction_proba:.2f}")
         st.write(f"Le modèle prédit que le patient est **{result}**.")
-        st.write(f"Probabilité associée : {prediction_proba:.2f}")
+        
 
 
 # Graphiques de performance
