@@ -59,7 +59,7 @@ def split(df_transformed):
    
 # Fonction principale
 def main():
-    st.title("Etude pronostique de Décès avec DecisionTreeClassifier")
+    st.title("Etude pronostique de Décès aprés le traitement")
 
     # Charger les données
     df = load_data()
