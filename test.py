@@ -105,9 +105,9 @@ def main():
 
     # Afficher les résultats
     st.subheader("Résultats")
-    st.write(f"**Accuracy**: {accuracy:}")
-    st.write(f"**Précision**: {precision.3f:}")
-    st.write(f"**Recall**: {recall:}")
+    st.write(f"**Accuracy**: {accuracy:.3f}")
+    st.write(f"**Précision**: {precision:.3f}")
+    st.write(f"**Recall**: {recall:.3f}")
 
     # Graphiques de performance avec un bouton "Exécuter"
     graphes_perf = st.sidebar.multiselect(
