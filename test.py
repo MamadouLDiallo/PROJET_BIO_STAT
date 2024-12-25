@@ -150,7 +150,7 @@ def main():
                 new_data[column] = st.sidebar.number_input(f"{column} :", min_value=1)
         else:
             # Champ par défaut pour d'autres colonnes numériques
-            new_data[column] = st.sidebar.number_input(f"{column} :", value=0)
+            new_data[column] = st.sidebar.number_input(f"{column} :", value=1)
 
 
     # Transformer les données pour correspondre au modèle
