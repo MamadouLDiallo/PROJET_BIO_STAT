@@ -72,7 +72,6 @@ def main():
 
     # Séparation des données
     X_train, X_test, y_train, y_test = split(df_transformed)
-    st.write(X_train.columns)  # Afficher les colonnes pour vérifier les noms exacts
 
     # Paramètres de recherche par grille
     st.subheader("Voici les meilleurs paramettres du modèle")
