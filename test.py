@@ -171,7 +171,6 @@ def main():
 
     # Assurez-vous que les colonnes de new_data_df sont dans le même ordre que celles de X_train
     new_data_df = new_data_df[X_train.columns]
-    st.write(new_data)
     # Bouton pour afficher le résultat de la prédiction
     if st.sidebar.button("Résultat de la Prédiction"):
         prediction = classifier.predict(new_data_df)[0]
