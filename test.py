@@ -145,7 +145,7 @@ def main():
             elif column == "Premiers Signe - Admission à l'hopital":
                 new_data[column] = st.sidebar.number_input(f"{column} (en heures) :", min_value=1)
             elif column == "Admission à l'hopital - Prise en charge medicale":
-                new_data[column] = st.sidebar.number_input(f"{column} (en heures) :", min_value=1, value=0)
+                new_data[column] = st.sidebar.number_input(f"{column} (en heures) :", min_value=1)
             elif column == "Temps de Suivi après traitement (en jours)":
                 new_data[column] = st.sidebar.number_input(f"{column} :", min_value=1)
         else:
