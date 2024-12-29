@@ -73,7 +73,7 @@ def main():
     # Séparation des données
     X_train, X_test, y_train, y_test = split(df_transformed)
 
-     Paramètres de recherche par grille
+    Paramètres de recherche par grille
     st.subheader("Voici les meilleurs paramettres du modèle")
     param_grid = {
         'max_depth': [1, 5, 10, 20],
