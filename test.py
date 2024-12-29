@@ -96,34 +96,34 @@ def main():
     #)
 
     # Charger le modèle pré-entraîné avec mise en cache
-@st.cache_resource
-def load_model():
-    """
-    Charger le modèle pré-entraîné sauvegardé dans un fichier .pkl.
-    Remplacez 'meilleur_modele.pkl' par le chemin vers votre fichier modèle.
-    """
-    try:
-        with open('meilleur_modele.pkl', 'rb') as file:
-            model = pickle.load(file)
-        return model
-    except FileNotFoundError:
-        st.error("Le fichier du modèle est introuvable. Assurez-vous qu'il est au bon emplacement.")
-        return None
-
-# Fonction pour effectuer des prédictions
-def predict(model, input_data):
-    """
-    Effectuer une prédiction avec le modèle donné et les données utilisateur.
-
-    :param model: Le modèle pré-entraîné.
-    :param input_data: Liste des valeurs des variables saisies par l'utilisateur.
-    :return: Résultat de la prédiction.
-    """
-    input_array = np.array(input_data).reshape(1, -1)  # Transformer en tableau 2D
-    return model.predict(input_array)[0]
-
-# Charger le modèle
-model = load_model()
+    @st.cache_resource
+    def load_model():
+        """
+        Charger le modèle pré-entraîné sauvegardé dans un fichier .pkl.
+        Remplacez 'meilleur_modele.pkl' par le chemin vers votre fichier modèle.
+        """
+        try:
+            with open('meilleur_modele.pkl', 'rb') as file:
+                classifier = pickle.load(file)
+            return classifier
+        except FileNotFoundError:
+            st.error("Le fichier du modèle est introuvable. Assurez-vous qu'il est au bon emplacement.")
+            return None
+    
+    # Fonction pour effectuer des prédictions
+    def predict(classifier, input_data):
+        """
+        Effectuer une prédiction avec le modèle donné et les données utilisateur.
+    
+        :param model: Le modèle pré-entraîné.
+        :param input_data: Liste des valeurs des variables saisies par l'utilisateur.
+        :return: Résultat de la prédiction.
+        """
+        input_array = np.array(input_data).reshape(1, -1)  # Transformer en tableau 2D
+        return classifier.predict(input_array)[0]
+    
+    # Charger le modèle
+    classifier = load_model()
     classifier.fit(X_train, y_train)
 
     # Prédictions
