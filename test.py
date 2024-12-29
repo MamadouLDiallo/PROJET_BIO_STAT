@@ -22,12 +22,12 @@ def load_data():
 
 # Transformation des variables
 def transform_variables(df):
-    df_transformed = df.copy()
+    df_transformed = df.drop("hémiplégie", axis=1)
     binary_columns = [
         "Hypertension Arterielle", 
         "Diabete", 
         "Cardiopathie", 
-        "hémiplégie",
+        #"hémiplégie",
         "Paralysie faciale", 
         "Aphasie", 
         "Hémiparésie", 
@@ -97,7 +97,7 @@ def main():
 
     classifier.fit(X_train, y_train)
     import joblib
-    joblib.dump(classifier, "model.pkl")
+    joblib.dump(classifier, "model1.pkl")
 
     # Prédictions
     y_pred = classifier.predict(X_test)
@@ -134,7 +134,7 @@ def main():
         elif column == "Traitement":
             new_data[column] = st.sidebar.selectbox(f"{column} :", ["Thrombolyse", "Chirurgie"])
         elif column in [
-            "Hypertension Arterielle", "Diabete", "Cardiopathie", "hémiplégie",
+            "Hypertension Arterielle", "Diabete", "Cardiopathie", #"hémiplégie",
             "Paralysie faciale", "Aphasie", "Hémiparésie", "Engagement Cerebral", "Inondation Ventriculaire"
         ]:
             new_data[column] = st.sidebar.radio(f"{column} :", ["OUI", "NON"])
