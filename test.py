@@ -96,6 +96,8 @@ def main():
     )
 
     classifier.fit(X_train, y_train)
+    import joblib
+    joblib.dump(classifier, "model.pkl")
 
     # Prédictions
     y_pred = classifier.predict(X_test)
