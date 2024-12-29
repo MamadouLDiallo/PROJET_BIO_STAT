@@ -76,7 +76,7 @@ def main():
     #Paramètres de recherche par grille
     st.subheader("Voici les meilleurs paramettres du modèle")
     param_grid = {
-        'max_depth': ["NONE",1, 5, 10, 20],
+        'max_depth': [1, 5, 10, 20],
         'min_samples_split': [2, 5, 10, 20],
         'min_samples_leaf': [1, 2, 5, 10]
     }
