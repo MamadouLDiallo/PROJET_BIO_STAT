@@ -88,7 +88,7 @@ def main():
     st.write(best_params)
 
 
-    Entraîner le modèle avec les meilleurs paramètres
+    #Entraîner le modèle avec les meilleurs paramètres
     classifier = DecisionTreeClassifier(
         max_depth=best_params["max_depth"],
         min_samples_split=best_params["min_samples_split"],
