@@ -1,42 +1,38 @@
 import streamlit as st
 import pandas as pd
-import joblib  # Importer joblib pour charger le modèle
+import numpy as np
+import joblib
 from sklearn.model_selection import train_test_split as tts
 from sklearn.metrics import (
     accuracy_score,
-    confusion_matrix,
-    recall_score,
     precision_score,
+    recall_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
     roc_curve,
     roc_auc_score,
-    precision_recall_curve,
-    ConfusionMatrixDisplay
+    precision_recall_curve
 )
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import RobustScaler 
+from sklearn.preprocessing import RobustScaler
+
+# Initialisation du scaler
 scaler = RobustScaler()
 
 # Fonction d'importation des données
 @st.cache_data(persist=True)
 def load_data():
-    data = pd.read_excel("Donnnées.xlsx")  # Assurez-vous que le fichier existe dans le répertoire
-    return data
-    
-  #Liste des variables quantitatives
-    numCols = data.select_dtypes(include = np.number).columns.tolist()
+    data = pd.read_excel("Donnnées.xlsx")  
+    numCols = data.select_dtypes(include=["number"]).columns.tolist()  
+    return data, numCols
 
 # Transformation des variables
 def transform_variables(df):
     df_transformed = df.drop("hémiplégie", axis=1)
     binary_columns = [
-        "Hypertension Arterielle", 
-        "Diabete", 
-        "Cardiopathie", 
-        "Paralysie faciale", 
-        "Aphasie", 
-        "Hémiparésie", 
-        "Engagement Cerebral", 
-        "Inondation Ventriculaire"
+        "Hypertension Arterielle", "Diabete", "Cardiopathie", 
+        "Paralysie faciale", "Aphasie", "Hémiparésie", 
+        "Engagement Cerebral", "Inondation Ventriculaire"
     ]
     for col in binary_columns:
         if col in df_transformed.columns:
@@ -55,26 +51,27 @@ def transform_variables(df):
 
 # Fonction pour la séparation train/test
 @st.cache_data(persist=True)
-def split(df_transformed):
+def split(df_transformed, numCols):
     y = df_transformed["Evolution"]
     X = df_transformed.drop("Evolution", axis=1)
-    X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) 
-    return X_train, X_test, y_train, y_test
-  
-    #copy des données train/test
+    X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1)
+    
+    # Copie des données train/test
     X_train_scaled = X_train.copy()
     X_test_scaled = X_test.copy()
-    #transformation des données d'entrainement
-    X_train_scaled.loc[: , numCols] = scaler.fit_transform(X_train_scaled[numCols])
-    #transformation des données de test
-    X_test_scaled.loc[: , numCols] = scaler.transform(X_test_scaled[numCols])
-   
+    
+    # Transformation des données numériques uniquement
+    X_train_scaled[numCols] = scaler.fit_transform(X_train[numCols])
+    X_test_scaled[numCols] = scaler.transform(X_test[numCols])
+    
+    return X_train_scaled, X_test_scaled, y_train, y_test
+
 # Fonction principale
 def main():
-    st.title("Etude pronostique de Décès aprés le traitement")
+    st.title("Étude pronostique de Décès après le traitement")
 
     # Charger les données
-    df = load_data()
+    df, numCols = load_data()
     if st.sidebar.checkbox("Afficher les données brutes", False):
         st.subheader("Base de données : échantillon de 10 observations")
         st.write(df.sample(10))
@@ -83,12 +80,12 @@ def main():
     df_transformed = transform_variables(df)
 
     # Séparation des données
-    X_train, X_test, y_train, y_test = split(df_transformed)
+    X_train_scaled, X_test_scaled, y_train, y_test = split(df_transformed, numCols)
 
     # Charger le modèle pré-entraîné
     model = None
     try:
-        model = joblib.load("best_model.pkl")  # Assurez-vous que le fichier 'best_model.pkl' existe dans le répertoire
+        model = joblib.load("best_model.pkl")  
         st.success("Modèle chargé avec succès !")
     except Exception as e:
         st.error(f"Erreur de chargement du modèle : {e}")
@@ -108,85 +105,45 @@ def main():
         st.write(f"**Précision**: {precision:.3f}")
         st.write(f"**Recall**: {recall:.3f}")
 
-        # Graphiques de performance avec un bouton "Exécuter"
+        # Graphiques de performance
         graphes_perf = st.sidebar.multiselect(
             "Graphiques de performance",
             ["Confusion Matrix", "ROC Curve", "Precision-Recall Curve"]
         )
-        execute = st.sidebar.button("Affichez les Graphiques")
-
-        if execute:
+        if st.sidebar.button("Afficher les Graphiques"):
             plot_perf(graphes_perf, model, X_test_scaled, y_test)
 
-    # Formulaire pour les données du patient
+    # Prédiction pour un nouveau patient
     st.sidebar.header("Prédiction pour un Nouveau Patient")
-
-    # Création des champs pour toutes les variables
     new_data = {}
-    for column in X_train.columns:
-        if column == "SEXE":
-            new_data[column] = st.sidebar.selectbox(f"{column} :", ["Homme", "Femme"])
-        elif column == "Traitement":
-            new_data[column] = st.sidebar.selectbox(f"{column} :", ["Thrombolyse", "Chirurgie"])
-        elif column in [
-            "Hypertension Arterielle", "Diabete", "Cardiopathie", 
-            "Paralysie faciale", "Aphasie", "Hémiparésie", "Engagement Cerebral", "Inondation Ventriculaire"
-        ]:
+    for column in X_train_scaled.columns:
+        if column in ["SEXE", "Traitement"]:
+            new_data[column] = st.sidebar.selectbox(f"{column} :", ["Homme", "Femme"] if column == "SEXE" else ["Thrombolyse", "Chirurgie"])
+        elif column in binary_columns:
             new_data[column] = st.sidebar.radio(f"{column} :", ["OUI", "NON"])
-        elif column in [
-            "AGE", "Premiers Signe - Admission à l'hopital",
-            "Admission à l'hopital - Prise en charge medicale", "Temps de Suivi après traitement (en jours)"
-        ]:
-            # Définir les plages et les valeurs par défaut pour les variables numériques
-            if column == "AGE":
-                new_data[column] = st.sidebar.number_input(f"{column} :", min_value=1)
-            elif column == "Premiers Signe - Admission à l'hopital":
-                new_data[column] = st.sidebar.number_input(f"{column} (en heures) :", min_value=1)
-            elif column == "Admission à l'hopital - Prise en charge medicale":
-                new_data[column] = st.sidebar.number_input(f"{column} (en heures) :", min_value=1)
-            elif column == "Temps de Suivi après traitement (en jours)":
-                new_data[column] = st.sidebar.number_input(f"{column} :", min_value=1)
         else:
-            # Champ par défaut pour d'autres colonnes numériques
-            new_data[column] = st.sidebar.number_input(f"{column} :", value=1)
+            new_data[column] = st.sidebar.number_input(f"{column} :", min_value=0, value=1)
 
+    # Transformation des données du patient
+    new_data_transformed = {col: 1 if val in ["OUI", "Homme", "Thrombolyse"] else 0 for col, val in new_data.items() if col not in numCols}
+    new_data_transformed.update({col: val for col, val in new_data.items() if col in numCols})
+    new_data_df = pd.DataFrame([new_data_transformed])[X_train_scaled.columns]
+    new_data_df[numCols] = scaler.transform(new_data_df[numCols])
 
-    # Transformer les données pour correspondre au modèle
-    new_data_transformed = {col: 1 if val in ["OUI", "Homme", "Thrombolyse"] else 0 for col, val in new_data.items() if col not in [
-        "AGE", "Premiers Signe - Admission à l'hopital",
-        "Admission à l'hopital - Prise en charge medicale", "Temps de Suivi après traitement (en jours)"
-    ]}
-    # Ajouter les variables numériques directement
-    new_data_transformed.update({
-        col: val for col, val in new_data.items() if col in [
-            "AGE", "Premiers Signe - Admission à l'hopital",
-            "Admission à l'hopital - Prise en charge medicale", "Temps de Suivi après traitement (en jours)"
-        ]
-    })
-
-    # Conversion en DataFrame
-    new_data_df = pd.DataFrame([new_data_transformed])
-    
- #transformation des données d'entrainement
-    new_data_df.loc[: , numCols] = scaler.transform(new_data_df[numCols])
-    
-    # Assurez-vous que les colonnes de new_data_df sont dans le même ordre que celles de X_train_scaled
-    new_data_df = new_data_df[X_train_scaled.columns]
-    
-    # Bouton pour afficher le résultat de la prédiction
+    # Résultat de la prédiction
     if st.sidebar.button("Résultat de la Prédiction"):
         prediction = model.predict(new_data_df)[0]
         prediction_proba = model.predict_proba(new_data_df)[:, 1][0]
         result = "Décédé" if prediction == 1 else "Vivant"
 
         st.subheader("Résultat de la Prédiction")
-        st.write(f"résultat de la prédiction  : {prediction_proba:.0f}")
+        st.write(f"Probabilité de décès : {prediction_proba:.2f}")
         st.write(f"Le modèle prédit que le patient est **{result}**.")
 
 # Graphiques de performance
 def plot_perf(graphes, model, X_test_scaled, y_test):
     if "Confusion Matrix" in graphes:
-        st.subheader("Matrice de confusion")
+        st.subheader("Matrice de Confusion")
         y_pred = model.predict(X_test_scaled)
         cm = confusion_matrix(y_test, y_pred)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
