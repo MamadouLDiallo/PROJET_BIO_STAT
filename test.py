@@ -164,9 +164,13 @@ def main():
 
     # Conversion en DataFrame
     new_data_df = pd.DataFrame([new_data_transformed])
-
+    
+ #transformation des données d'entrainement
+    X_train_scaled.loc[: , new_data_df] = scaler.transform(X_train_scaled[new_data_df])
+    
     # Assurez-vous que les colonnes de new_data_df sont dans le même ordre que celles de X_train_scaled
     new_data_df = new_data_df[X_train_scaled.columns]
+    
     # Bouton pour afficher le résultat de la prédiction
     if st.sidebar.button("Résultat de la Prédiction"):
         prediction = model.predict(new_data_df)[0]
