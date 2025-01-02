@@ -59,13 +59,13 @@ def split(df_transformed):
     X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) 
     return X_train, X_test, y_train, y_test
   
-#copy des données train/test
-X_train_scaled = X_train.copy()
-X_test_scaled = X_test.copy()
-#transformation des données d'entrainement
-X_train_scaled.loc[: , numCols] = scaler.fit_transform(X_train_scaled[numCols])
-#transformation des données de test
-X_test_scaled.loc[: , numCols] = scaler.transform(X_test_scaled[numCols])
+    #copy des données train/test
+    X_train_scaled = X_train.copy()
+    X_test_scaled = X_test.copy()
+    #transformation des données d'entrainement
+    X_train_scaled.loc[: , numCols] = scaler.fit_transform(X_train_scaled[numCols])
+    #transformation des données de test
+    X_test_scaled.loc[: , numCols] = scaler.transform(X_test_scaled[numCols])
    
 # Fonction principale
 def main():
