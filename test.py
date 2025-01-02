@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import joblib  # Importer joblib pour charger le modèle
+import joblib
 from sklearn.model_selection import train_test_split as tts
 from sklearn.metrics import (
     accuracy_score,
@@ -14,8 +14,9 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay
 )
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import RobustScaler 
+from sklearn.preprocessing import RobustScaler
 
+# Initialisation du scaler
 scaler = RobustScaler()
 
 # Fonction d'importation des données
@@ -57,12 +58,12 @@ def transform_variables(df):
 def split(df_transformed):
     y = df_transformed["Evolution"]
     X = df_transformed.drop("Evolution", axis=1)
-    X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) 
+    X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1)
     return X_train, X_test, y_train, y_test
 
 # Fonction principale
 def main():
-    st.title("Étude pronostique de Décès après le traitement")
+    st.title("Etude pronostique de Décès après le traitement")
 
     # Charger les données
     df = load_data()
@@ -73,11 +74,12 @@ def main():
     # Transformation des variables
     df_transformed = transform_variables(df)
 
-    # Liste des variables quantitatives
-    numCols = df_transformed.select_dtypes(include=np.number).columns.tolist()
-
     # Séparation des données
     X_train, X_test, y_train, y_test = split(df_transformed)
+
+    # Identifier les colonnes numériques
+    numCols = df_transformed.select_dtypes(include=np.number).columns.tolist()
+    numCols = [col for col in numCols if col in X_train.columns]
 
     # Normalisation des données
     X_train_scaled = X_train.copy()
@@ -108,12 +110,12 @@ def main():
         st.write(f"**Précision**: {precision:.3f}")
         st.write(f"**Recall**: {recall:.3f}")
 
-        # Graphiques de performance
+        # Graphiques de performance avec un bouton "Exécuter"
         graphes_perf = st.sidebar.multiselect(
             "Graphiques de performance",
             ["Confusion Matrix", "ROC Curve", "Precision-Recall Curve"]
         )
-        execute = st.sidebar.button("Afficher les Graphiques")
+        execute = st.sidebar.button("Affichez les Graphiques")
 
         if execute:
             plot_perf(graphes_perf, model, X_test_scaled, y_test)
@@ -121,6 +123,7 @@ def main():
     # Formulaire pour les données du patient
     st.sidebar.header("Prédiction pour un Nouveau Patient")
 
+    # Création des champs pour toutes les variables
     new_data = {}
     for column in X_train.columns:
         if column == "SEXE":
@@ -132,49 +135,37 @@ def main():
             "Paralysie faciale", "Aphasie", "Hémiparésie", "Engagement Cerebral", "Inondation Ventriculaire"
         ]:
             new_data[column] = st.sidebar.radio(f"{column} :", ["OUI", "NON"])
-        elif column in [
-            "AGE", "Premiers Signe - Admission à l'hopital",
-            "Admission à l'hopital - Prise en charge medicale", "Temps de Suivi après traitement (en jours)"
-        ]:
-            new_data[column] = st.sidebar.number_input(f"{column} :", min_value=1)
+        else:
+            new_data[column] = st.sidebar.number_input(f"{column} :", value=1)
 
-    new_data_transformed = {
-        col: 1 if val in ["OUI", "Homme", "Thrombolyse"] else 0 
-        for col, val in new_data.items() 
-        if col not in ["AGE", "Premiers Signe - Admission à l'hopital", 
-                       "Admission à l'hopital - Prise en charge medicale", 
-                       "Temps de Suivi après traitement (en jours)"]
-    }
-    new_data_transformed.update({
-        col: val for col, val in new_data.items() if col in [
-            "AGE", "Premiers Signe - Admission à l'hopital",
-            "Admission à l'hopital - Prise en charge medicale", 
-            "Temps de Suivi après traitement (en jours)"
-        ]
-    })
+    # Transformation des données pour correspondre au modèle
+    new_data_transformed = {col: 1 if val in ["OUI", "Homme", "Thrombolyse"] else 0 for col, val in new_data.items() if col not in numCols}
+    new_data_transformed.update({col: val for col, val in new_data.items() if col in numCols})
 
+    # Conversion en DataFrame
     new_data_df = pd.DataFrame([new_data_transformed])
     new_data_df.loc[:, numCols] = scaler.transform(new_data_df[numCols])
     new_data_df = new_data_df[X_train_scaled.columns]
 
+    # Bouton pour afficher le résultat de la prédiction
     if st.sidebar.button("Résultat de la Prédiction"):
         prediction = model.predict(new_data_df)[0]
         prediction_proba = model.predict_proba(new_data_df)[:, 1][0]
         result = "Décédé" if prediction == 1 else "Vivant"
 
         st.subheader("Résultat de la Prédiction")
-        st.write(f"**Probabilité de décès** : {prediction_proba:.2f}")
+        st.write(f"Probabilité de décès : {prediction_proba:.3f}")
         st.write(f"Le modèle prédit que le patient est **{result}**.")
 
 # Graphiques de performance
 def plot_perf(graphes, model, X_test_scaled, y_test):
     if "Confusion Matrix" in graphes:
-        st.subheader("Matrice de Confusion")
+        st.subheader("Matrice de confusion")
         y_pred = model.predict(X_test_scaled)
         cm = confusion_matrix(y_test, y_pred)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot(cmap="viridis")
-        st.pyplot()
+        st.pyplot(plt.gcf())
 
     if "ROC Curve" in graphes:
         st.subheader("Courbe ROC")
@@ -188,7 +179,7 @@ def plot_perf(graphes, model, X_test_scaled, y_test):
         plt.ylabel("True Positive Rate")
         plt.title("ROC Curve")
         plt.legend()
-        st.pyplot()
+        st.pyplot(plt.gcf())
 
     if "Precision-Recall Curve" in graphes:
         st.subheader("Courbe Precision-Recall")
@@ -200,7 +191,7 @@ def plot_perf(graphes, model, X_test_scaled, y_test):
         plt.ylabel("Precision")
         plt.title("Precision-Recall Curve")
         plt.legend()
-        st.pyplot()
+        st.pyplot(plt.gcf())
 
 if __name__ == "__main__":
     main()
