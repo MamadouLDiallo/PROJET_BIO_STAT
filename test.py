@@ -86,7 +86,7 @@ def main():
     # Charger le modèle pré-entraîné
     model = None
     try:
-        model = joblib.load("best_model.pkl")  # Assurez-vous que le fichier 'model.pkl' existe dans le répertoire
+        model = joblib.load("best_model.pkl")  # Assurez-vous que le fichier 'best_model.pkl' existe dans le répertoire
         st.success("Modèle chargé avec succès !")
     except Exception as e:
         st.error(f"Erreur de chargement du modèle : {e}")
@@ -114,7 +114,7 @@ def main():
         execute = st.sidebar.button("Affichez les Graphiques")
 
         if execute:
-            plot_perf(graphes_perf, model, X_test, y_test)
+            plot_perf(graphes_perf, model, X_test_scaled, y_test)
 
     # Formulaire pour les données du patient
     st.sidebar.header("Prédiction pour un Nouveau Patient")
@@ -165,8 +165,8 @@ def main():
     # Conversion en DataFrame
     new_data_df = pd.DataFrame([new_data_transformed])
 
-    # Assurez-vous que les colonnes de new_data_df sont dans le même ordre que celles de X_train
-    new_data_df = new_data_df[X_train.columns]
+    # Assurez-vous que les colonnes de new_data_df sont dans le même ordre que celles de X_train_scaled
+    new_data_df = new_data_df[X_train_scaled.columns]
     # Bouton pour afficher le résultat de la prédiction
     if st.sidebar.button("Résultat de la Prédiction"):
         prediction = model.predict(new_data_df)[0]
