@@ -88,7 +88,7 @@ def main():
     # Charger le modèle pré-entraîné
     model = None
     try:
-        model = joblib.load("best_model.pkl")
+        model = joblib.load("model.pkl")
         st.success("Modèle chargé avec succès !")
     except FileNotFoundError:
         st.error("Erreur : le fichier 'best_model.pkl' est introuvable.")
