@@ -11,12 +11,11 @@ from sklearn.metrics import (
     roc_curve,
     roc_auc_score,
     precision_recall_curve,
-    ConfusionMatrixDisplay
+    ConfusionMatrixDisplay,
 )
-import matplotlib.pyplot as plt
 from sklearn.preprocessing import RobustScaler
+import matplotlib.pyplot as plt
 
-# Initialisation du scaler
 scaler = RobustScaler()
 
 # Fonction d'importation des données
@@ -29,14 +28,14 @@ def load_data():
 def transform_variables(df):
     df_transformed = df.drop("hémiplégie", axis=1)
     binary_columns = [
-        "Hypertension Arterielle", 
-        "Diabete", 
-        "Cardiopathie", 
-        "Paralysie faciale", 
-        "Aphasie", 
-        "Hémiparésie", 
-        "Engagement Cerebral", 
-        "Inondation Ventriculaire"
+        "Hypertension Arterielle",
+        "Diabete",
+        "Cardiopathie",
+        "Paralysie faciale",
+        "Aphasie",
+        "Hémiparésie",
+        "Engagement Cerebral",
+        "Inondation Ventriculaire",
     ]
     for col in binary_columns:
         if col in df_transformed.columns:
@@ -74,95 +73,81 @@ def main():
     # Transformation des variables
     df_transformed = transform_variables(df)
 
+    # Détection des colonnes numériques
+    numCols = df_transformed.select_dtypes(include=np.number).columns.tolist()
+
     # Séparation des données
     X_train, X_test, y_train, y_test = split(df_transformed)
-
-    # Identifier les colonnes numériques
-    numCols = df_transformed.select_dtypes(include=np.number).columns.tolist()
-    numCols = [col for col in numCols if col in X_train.columns]
 
     # Normalisation des données
     X_train_scaled = X_train.copy()
     X_test_scaled = X_test.copy()
-    X_train_scaled.loc[:, numCols] = scaler.fit_transform(X_train_scaled[numCols])
-    X_test_scaled.loc[:, numCols] = scaler.transform(X_test_scaled[numCols])
+    X_train_scaled[numCols] = scaler.fit_transform(X_train[numCols])
+    X_test_scaled[numCols] = scaler.transform(X_test[numCols])
 
     # Charger le modèle pré-entraîné
     model = None
     try:
-        model = joblib.load("best_model.pkl")  # Assurez-vous que le fichier 'best_model.pkl' existe dans le répertoire
+        model = joblib.load("best_model.pkl")
         st.success("Modèle chargé avec succès !")
+    except FileNotFoundError:
+        st.error("Erreur : le fichier 'best_model.pkl' est introuvable.")
+        return
     except Exception as e:
         st.error(f"Erreur de chargement du modèle : {e}")
+        return
 
-    if model:
-        # Prédictions
-        y_pred = model.predict(X_test_scaled)
+    # Prédictions et résultats
+    y_pred = model.predict(X_test_scaled)
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
 
-        # Calculer les métriques de performance
-        accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred)
-        recall = recall_score(y_test, y_pred)
+    st.subheader("Résultats")
+    st.write(f"**Accuracy**: {accuracy:.3f}")
+    st.write(f"**Précision**: {precision:.3f}")
+    st.write(f"**Recall**: {recall:.3f}")
 
-        # Afficher les résultats
-        st.subheader("Résultats")
-        st.write(f"**Accuracy**: {accuracy:.3f}")
-        st.write(f"**Précision**: {precision:.3f}")
-        st.write(f"**Recall**: {recall:.3f}")
+    # Graphiques de performance
+    graphes_perf = st.sidebar.multiselect(
+        "Graphiques de performance", ["Confusion Matrix", "ROC Curve", "Precision-Recall Curve"]
+    )
+    if st.sidebar.button("Afficher les Graphiques"):
+        plot_perf(graphes_perf, model, X_test_scaled, y_test)
 
-        # Graphiques de performance avec un bouton "Exécuter"
-        graphes_perf = st.sidebar.multiselect(
-            "Graphiques de performance",
-            ["Confusion Matrix", "ROC Curve", "Precision-Recall Curve"]
-        )
-        execute = st.sidebar.button("Affichez les Graphiques")
-
-        if execute:
-            plot_perf(graphes_perf, model, X_test_scaled, y_test)
-
-    # Formulaire pour les données du patient
+    # Prédiction pour un nouveau patient
     st.sidebar.header("Prédiction pour un Nouveau Patient")
-
-    # Création des champs pour toutes les variables
     new_data = {}
-    for column in X_train.columns:
-        if column == "SEXE":
-            new_data[column] = st.sidebar.selectbox(f"{column} :", ["Homme", "Femme"])
-        elif column == "Traitement":
-            new_data[column] = st.sidebar.selectbox(f"{column} :", ["Thrombolyse", "Chirurgie"])
-        elif column in [
-            "Hypertension Arterielle", "Diabete", "Cardiopathie", 
-            "Paralysie faciale", "Aphasie", "Hémiparésie", "Engagement Cerebral", "Inondation Ventriculaire"
-        ]:
-            new_data[column] = st.sidebar.radio(f"{column} :", ["OUI", "NON"])
+    for col in X_train.columns:
+        if col in binary_columns:
+            new_data[col] = st.sidebar.radio(f"{col} :", ["OUI", "NON"])
+        elif col == "SEXE":
+            new_data[col] = st.sidebar.selectbox(f"{col} :", ["Homme", "Femme"])
+        elif col == "Traitement":
+            new_data[col] = st.sidebar.selectbox(f"{col} :", ["Thrombolyse", "Chirurgie"])
         else:
-            new_data[column] = st.sidebar.number_input(f"{column} :", value=1)
+            new_data[col] = st.sidebar.number_input(f"{col} :", min_value=0)
 
-    # Transformation des données pour correspondre au modèle
-    new_data_transformed = {col: 1 if val in ["OUI", "Homme", "Thrombolyse"] else 0 for col, val in new_data.items() if col not in numCols}
-    new_data_transformed.update({col: val for col, val in new_data.items() if col in numCols})
+    # Transformation et prédiction
+    try:
+        new_data_transformed = {col: 1 if val in ["OUI", "Homme", "Thrombolyse"] else 0 for col, val in new_data.items()}
+        new_data_df = pd.DataFrame([new_data_transformed])
+        new_data_df[numCols] = scaler.transform(new_data_df[numCols])
+        new_data_df = new_data_df.reindex(columns=X_train_scaled.columns, fill_value=0)
 
-    # Conversion en DataFrame
-    new_data_df = pd.DataFrame([new_data_transformed])
-    new_data_df.loc[:, numCols] = scaler.transform(new_data_df[numCols])
-    new_data_df = new_data_df[X_train_scaled.columns]
-
-    # Bouton pour afficher le résultat de la prédiction
-    if st.sidebar.button("Résultat de la Prédiction"):
-        prediction = model.predict(new_data_df)[0]
-        prediction_proba = model.predict_proba(new_data_df)[:, 1][0]
-        result = "Décédé" if prediction == 1 else "Vivant"
-
-        st.subheader("Résultat de la Prédiction")
-        st.write(f"Probabilité de décès : {prediction_proba:.3f}")
-        st.write(f"Le modèle prédit que le patient est **{result}**.")
+        if st.sidebar.button("Résultat de la Prédiction"):
+            prediction = model.predict(new_data_df)[0]
+            result = "Décédé" if prediction == 1 else "Vivant"
+            st.subheader("Résultat de la Prédiction")
+            st.write(f"Le modèle prédit que le patient est **{result}**.")
+    except Exception as e:
+        st.error(f"Erreur lors de la prédiction : {e}")
 
 # Graphiques de performance
 def plot_perf(graphes, model, X_test_scaled, y_test):
     if "Confusion Matrix" in graphes:
         st.subheader("Matrice de confusion")
-        y_pred = model.predict(X_test_scaled)
-        cm = confusion_matrix(y_test, y_pred)
+        cm = confusion_matrix(y_test, model.predict(X_test_scaled))
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot(cmap="viridis")
         st.pyplot(plt.gcf())
@@ -172,9 +157,8 @@ def plot_perf(graphes, model, X_test_scaled, y_test):
         y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
         fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
         auc_score = roc_auc_score(y_test, y_pred_proba)
-        plt.figure()
         plt.plot(fpr, tpr, label=f"ROC Curve (AUC = {auc_score:.2f})")
-        plt.plot([0, 1], [0, 1], "k--", label="Random Guess")
+        plt.plot([0, 1], [0, 1], "k--")
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
         plt.title("ROC Curve")
@@ -185,7 +169,6 @@ def plot_perf(graphes, model, X_test_scaled, y_test):
         st.subheader("Courbe Precision-Recall")
         y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
         precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
-        plt.figure()
         plt.plot(recall, precision, label="Precision-Recall Curve")
         plt.xlabel("Recall")
         plt.ylabel("Precision")
