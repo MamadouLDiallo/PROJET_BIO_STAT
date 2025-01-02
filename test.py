@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-import joblib  # Importer joblib pour charger le modèle
+# Importer joblib pour charger le modèle
+import joblib  
 from sklearn.model_selection import train_test_split as tts
 from sklearn.metrics import (
     accuracy_score,
@@ -17,7 +18,7 @@ import matplotlib.pyplot as plt
 # Fonction d'importation des données
 @st.cache_data(persist=True)
 def load_data():
-    data = pd.read_excel("Donnnées.xlsx")  # Assurez-vous que le fichier existe dans le répertoire
+    data = pd.read_excel("Donnnées.xlsx")  
     return data
 
 # Transformation des variables
@@ -75,7 +76,7 @@ def main():
     # Charger le modèle pré-entraîné
     model = None
     try:
-        model = joblib.load("model.pkl")  # Assurez-vous que le fichier 'model.pkl' existe dans le répertoire
+        model = joblib.load("model1.pkl")  
         st.success("Modèle chargé avec succès !")
     except Exception as e:
         st.error(f"Erreur de chargement du modèle : {e}")
@@ -156,6 +157,7 @@ def main():
 
     # Assurez-vous que les colonnes de new_data_df sont dans le même ordre que celles de X_train
     new_data_df = new_data_df[X_train.columns]
+    
     # Bouton pour afficher le résultat de la prédiction
     if st.sidebar.button("Résultat de la Prédiction"):
         prediction = model.predict(new_data_df)[0]
