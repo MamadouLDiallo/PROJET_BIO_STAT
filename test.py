@@ -21,7 +21,7 @@ def load_data():
     return data
     
   #Liste des variables quantitatives
-numCols = data.select_dtypes(include = np.number).columns.tolist()
+    numCols = data.select_dtypes(include = np.number).columns.tolist()
 
 # Transformation des variables
 def transform_variables(df):
