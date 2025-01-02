@@ -145,6 +145,8 @@ def main():
 
 # Graphiques de performance
 def plot_perf(graphes, model, X_test_scaled, y_test):
+    plt.clf()  # Clear any previous plot
+
     if "Confusion Matrix" in graphes:
         st.subheader("Matrice de confusion")
         cm = confusion_matrix(y_test, model.predict(X_test_scaled))
