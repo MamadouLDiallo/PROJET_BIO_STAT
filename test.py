@@ -75,7 +75,7 @@ def main():
     # Charger le modèle pré-entraîné
     model = None
     try:
-        model = joblib.load("model1.pkl")  # Assurez-vous que le fichier 'model.pkl' existe dans le répertoire
+        model = joblib.load("best_model.pkl")  # Assurez-vous que le fichier 'model.pkl' existe dans le répertoire
         st.success("Modèle chargé avec succès !")
     except Exception as e:
         st.error(f"Erreur de chargement du modèle : {e}")
