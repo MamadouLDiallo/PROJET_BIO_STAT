@@ -76,16 +76,22 @@ def main():
     # Détection des colonnes numériques
     numCols = df_transformed.select_dtypes(include=np.number).columns.tolist()
 
-    # Séparation des données
+    # Séparer les données
     X_train, X_test, y_train, y_test = split(df_transformed)
-    st.write(f"Colonnes disponibles dans X_train : {X_train.columns.tolist()}")
-    st.write(f"Colonnes sélectionnées pour la normalisation : {numCols}")
 
-    # Normalisation des données
+    # Normalisation des données (exclure 'Evolution' de la normalisation)
     X_train_scaled = X_train.copy()
     X_test_scaled = X_test.copy()
-    X_train_scaled[numCols] = scaler.fit_transform(X_train[numCols])
-    X_test_scaled[numCols] = scaler.transform(X_test[numCols])
+
+    # Appliquer la normalisation uniquement sur les colonnes numériques
+    if numCols:
+        X_train_scaled[numCols] = scaler.fit_transform(X_train[numCols])
+        X_test_scaled[numCols] = scaler.transform(X_test[numCols])
+    else:
+        st.error("Aucune colonne numérique valide trouvée pour la normalisation.")
+
+    # Vérification après normalisation
+    st.write(f"Colonnes de X_train après normalisation : {X_train_scaled.columns.tolist()}")
 
     # Charger le modèle pré-entraîné
     model = None
@@ -93,7 +99,7 @@ def main():
         model = joblib.load("model.pkl")
         st.success("Modèle chargé avec succès !")
     except FileNotFoundError:
-        st.error("Erreur : le fichier 'best_model.pkl' est introuvable.")
+        st.error("Erreur : le fichier 'model.pkl' est introuvable.")
         return
     except Exception as e:
         st.error(f"Erreur de chargement du modèle : {e}")
@@ -147,8 +153,6 @@ def main():
 
 # Graphiques de performance
 def plot_perf(graphes, model, X_test_scaled, y_test):
-    plt.clf()  # Clear any previous plot
-
     if "Confusion Matrix" in graphes:
         st.subheader("Matrice de confusion")
         cm = confusion_matrix(y_test, model.predict(X_test_scaled))
