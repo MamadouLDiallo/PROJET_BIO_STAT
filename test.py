@@ -1,38 +1,41 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import joblib
+import joblib  # Importer joblib pour charger le modèle
 from sklearn.model_selection import train_test_split as tts
 from sklearn.metrics import (
     accuracy_score,
-    precision_score,
-    recall_score,
     confusion_matrix,
-    ConfusionMatrixDisplay,
+    recall_score,
+    precision_score,
     roc_curve,
     roc_auc_score,
-    precision_recall_curve
+    precision_recall_curve,
+    ConfusionMatrixDisplay
 )
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import RobustScaler 
 
-# Initialisation du scaler
 scaler = RobustScaler()
 
 # Fonction d'importation des données
 @st.cache_data(persist=True)
 def load_data():
-    data = pd.read_excel("Donnnées.xlsx")  
-    numCols = data.select_dtypes(include=["number"]).columns.tolist()  
-    return data, numCols
+    data = pd.read_excel("Donnnées.xlsx")  # Assurez-vous que le fichier existe dans le répertoire
+    return data
 
 # Transformation des variables
 def transform_variables(df):
     df_transformed = df.drop("hémiplégie", axis=1)
     binary_columns = [
-        "Hypertension Arterielle", "Diabete", "Cardiopathie", 
-        "Paralysie faciale", "Aphasie", "Hémiparésie", 
-        "Engagement Cerebral", "Inondation Ventriculaire"
+        "Hypertension Arterielle", 
+        "Diabete", 
+        "Cardiopathie", 
+        "Paralysie faciale", 
+        "Aphasie", 
+        "Hémiparésie", 
+        "Engagement Cerebral", 
+        "Inondation Ventriculaire"
     ]
     for col in binary_columns:
         if col in df_transformed.columns:
@@ -51,27 +54,18 @@ def transform_variables(df):
 
 # Fonction pour la séparation train/test
 @st.cache_data(persist=True)
-def split(df_transformed, numCols):
+def split(df_transformed):
     y = df_transformed["Evolution"]
     X = df_transformed.drop("Evolution", axis=1)
-    X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1)
-    
-    # Copie des données train/test
-    X_train_scaled = X_train.copy()
-    X_test_scaled = X_test.copy()
-    
-    # Transformation des données numériques uniquement
-    X_train_scaled[numCols] = scaler.fit_transform(X_train[numCols])
-    X_test_scaled[numCols] = scaler.transform(X_test[numCols])
-    
-    return X_train_scaled, X_test_scaled, y_train, y_test
+    X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) 
+    return X_train, X_test, y_train, y_test
 
 # Fonction principale
 def main():
     st.title("Étude pronostique de Décès après le traitement")
 
     # Charger les données
-    df, numCols = load_data()
+    df = load_data()
     if st.sidebar.checkbox("Afficher les données brutes", False):
         st.subheader("Base de données : échantillon de 10 observations")
         st.write(df.sample(10))
@@ -79,13 +73,22 @@ def main():
     # Transformation des variables
     df_transformed = transform_variables(df)
 
+    # Liste des variables quantitatives
+    numCols = df_transformed.select_dtypes(include=np.number).columns.tolist()
+
     # Séparation des données
-    X_train_scaled, X_test_scaled, y_train, y_test = split(df_transformed, numCols)
+    X_train, X_test, y_train, y_test = split(df_transformed)
+
+    # Normalisation des données
+    X_train_scaled = X_train.copy()
+    X_test_scaled = X_test.copy()
+    X_train_scaled.loc[:, numCols] = scaler.fit_transform(X_train_scaled[numCols])
+    X_test_scaled.loc[:, numCols] = scaler.transform(X_test_scaled[numCols])
 
     # Charger le modèle pré-entraîné
     model = None
     try:
-        model = joblib.load("best_model.pkl")  
+        model = joblib.load("best_model.pkl")  # Assurez-vous que le fichier 'best_model.pkl' existe dans le répertoire
         st.success("Modèle chargé avec succès !")
     except Exception as e:
         st.error(f"Erreur de chargement du modèle : {e}")
@@ -110,34 +113,57 @@ def main():
             "Graphiques de performance",
             ["Confusion Matrix", "ROC Curve", "Precision-Recall Curve"]
         )
-        if st.sidebar.button("Afficher les Graphiques"):
+        execute = st.sidebar.button("Afficher les Graphiques")
+
+        if execute:
             plot_perf(graphes_perf, model, X_test_scaled, y_test)
 
-    # Prédiction pour un nouveau patient
+    # Formulaire pour les données du patient
     st.sidebar.header("Prédiction pour un Nouveau Patient")
+
     new_data = {}
-    for column in X_train_scaled.columns:
-        if column in ["SEXE", "Traitement"]:
-            new_data[column] = st.sidebar.selectbox(f"{column} :", ["Homme", "Femme"] if column == "SEXE" else ["Thrombolyse", "Chirurgie"])
-        elif column in binary_columns:
+    for column in X_train.columns:
+        if column == "SEXE":
+            new_data[column] = st.sidebar.selectbox(f"{column} :", ["Homme", "Femme"])
+        elif column == "Traitement":
+            new_data[column] = st.sidebar.selectbox(f"{column} :", ["Thrombolyse", "Chirurgie"])
+        elif column in [
+            "Hypertension Arterielle", "Diabete", "Cardiopathie", 
+            "Paralysie faciale", "Aphasie", "Hémiparésie", "Engagement Cerebral", "Inondation Ventriculaire"
+        ]:
             new_data[column] = st.sidebar.radio(f"{column} :", ["OUI", "NON"])
-        else:
-            new_data[column] = st.sidebar.number_input(f"{column} :", min_value=0, value=1)
+        elif column in [
+            "AGE", "Premiers Signe - Admission à l'hopital",
+            "Admission à l'hopital - Prise en charge medicale", "Temps de Suivi après traitement (en jours)"
+        ]:
+            new_data[column] = st.sidebar.number_input(f"{column} :", min_value=1)
 
-    # Transformation des données du patient
-    new_data_transformed = {col: 1 if val in ["OUI", "Homme", "Thrombolyse"] else 0 for col, val in new_data.items() if col not in numCols}
-    new_data_transformed.update({col: val for col, val in new_data.items() if col in numCols})
-    new_data_df = pd.DataFrame([new_data_transformed])[X_train_scaled.columns]
-    new_data_df[numCols] = scaler.transform(new_data_df[numCols])
+    new_data_transformed = {
+        col: 1 if val in ["OUI", "Homme", "Thrombolyse"] else 0 
+        for col, val in new_data.items() 
+        if col not in ["AGE", "Premiers Signe - Admission à l'hopital", 
+                       "Admission à l'hopital - Prise en charge medicale", 
+                       "Temps de Suivi après traitement (en jours)"]
+    }
+    new_data_transformed.update({
+        col: val for col, val in new_data.items() if col in [
+            "AGE", "Premiers Signe - Admission à l'hopital",
+            "Admission à l'hopital - Prise en charge medicale", 
+            "Temps de Suivi après traitement (en jours)"
+        ]
+    })
 
-    # Résultat de la prédiction
+    new_data_df = pd.DataFrame([new_data_transformed])
+    new_data_df.loc[:, numCols] = scaler.transform(new_data_df[numCols])
+    new_data_df = new_data_df[X_train_scaled.columns]
+
     if st.sidebar.button("Résultat de la Prédiction"):
         prediction = model.predict(new_data_df)[0]
         prediction_proba = model.predict_proba(new_data_df)[:, 1][0]
         result = "Décédé" if prediction == 1 else "Vivant"
 
         st.subheader("Résultat de la Prédiction")
-        st.write(f"Probabilité de décès : {prediction_proba:.2f}")
+        st.write(f"**Probabilité de décès** : {prediction_proba:.2f}")
         st.write(f"Le modèle prédit que le patient est **{result}**.")
 
 # Graphiques de performance
@@ -148,7 +174,7 @@ def plot_perf(graphes, model, X_test_scaled, y_test):
         cm = confusion_matrix(y_test, y_pred)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot(cmap="viridis")
-        st.pyplot(plt.gcf())
+        st.pyplot()
 
     if "ROC Curve" in graphes:
         st.subheader("Courbe ROC")
@@ -162,7 +188,7 @@ def plot_perf(graphes, model, X_test_scaled, y_test):
         plt.ylabel("True Positive Rate")
         plt.title("ROC Curve")
         plt.legend()
-        st.pyplot(plt.gcf())
+        st.pyplot()
 
     if "Precision-Recall Curve" in graphes:
         st.subheader("Courbe Precision-Recall")
@@ -174,7 +200,7 @@ def plot_perf(graphes, model, X_test_scaled, y_test):
         plt.ylabel("Precision")
         plt.title("Precision-Recall Curve")
         plt.legend()
-        st.pyplot(plt.gcf())
+        st.pyplot()
 
 if __name__ == "__main__":
     main()
