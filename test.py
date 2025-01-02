@@ -13,6 +13,8 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay
 )
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import RobustScaler 
+scaler = RobustScaler()
 
 # Fonction d'importation des données
 @st.cache_data(persist=True)
