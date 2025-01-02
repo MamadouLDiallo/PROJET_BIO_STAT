@@ -19,6 +19,9 @@ import matplotlib.pyplot as plt
 def load_data():
     data = pd.read_excel("Donnnées.xlsx")  # Assurez-vous que le fichier existe dans le répertoire
     return data
+    
+  #Liste des variables quantitatives
+numCols = data.select_dtypes(include = np.number).columns.tolist()
 
 # Transformation des variables
 def transform_variables(df):
@@ -55,8 +58,7 @@ def split(df_transformed):
     X = df_transformed.drop("Evolution", axis=1)
     X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) 
     return X_train, X_test, y_train, y_test
-    #Liste des variables quantitatives
-numCols = data.select_dtypes(include = np.number).columns.tolist()
+  
 #copy des données train/test
 X_train_scaled = X_train.copy()
 X_test_scaled = X_test.copy()
