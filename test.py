@@ -78,6 +78,8 @@ def main():
 
     # Séparation des données
     X_train, X_test, y_train, y_test = split(df_transformed)
+    st.write(f"Colonnes disponibles dans X_train : {X_train.columns.tolist()}")
+    st.write(f"Colonnes sélectionnées pour la normalisation : {numCols}")
 
     # Normalisation des données
     X_train_scaled = X_train.copy()
