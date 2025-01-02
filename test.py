@@ -55,6 +55,15 @@ def split(df_transformed):
     X = df_transformed.drop("Evolution", axis=1)
     X_train, X_test, y_train, y_test = tts(X, y, test_size=0.3, random_state=1) 
     return X_train, X_test, y_train, y_test
+    #Liste des variables quantitatives
+numCols = data.select_dtypes(include = np.number).columns.tolist()
+#copy des données train/test
+X_train_scaled = X_train.copy()
+X_test_scaled = X_test.copy()
+#transformation des données d'entrainement
+X_train_scaled.loc[: , numCols] = scaler.fit_transform(X_train_scaled[numCols])
+#transformation des données de test
+X_test_scaled.loc[: , numCols] = scaler.transform(X_test_scaled[numCols])
    
 # Fonction principale
 def main():
@@ -82,7 +91,7 @@ def main():
 
     if model:
         # Prédictions
-        y_pred = model.predict(X_test)
+        y_pred = model.predict(X_test_scaled)
 
         # Calculer les métriques de performance
         accuracy = accuracy_score(y_test, y_pred)
@@ -167,10 +176,10 @@ def main():
         st.write(f"Le modèle prédit que le patient est **{result}**.")
 
 # Graphiques de performance
-def plot_perf(graphes, model, X_test, y_test):
+def plot_perf(graphes, model, X_test_scaled, y_test):
     if "Confusion Matrix" in graphes:
         st.subheader("Matrice de confusion")
-        y_pred = model.predict(X_test)
+        y_pred = model.predict(X_test_scaled)
         cm = confusion_matrix(y_test, y_pred)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot(cmap="viridis")
@@ -178,7 +187,7 @@ def plot_perf(graphes, model, X_test, y_test):
 
     if "ROC Curve" in graphes:
         st.subheader("Courbe ROC")
-        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
         fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
         auc_score = roc_auc_score(y_test, y_pred_proba)
         plt.figure()
@@ -192,7 +201,7 @@ def plot_perf(graphes, model, X_test, y_test):
 
     if "Precision-Recall Curve" in graphes:
         st.subheader("Courbe Precision-Recall")
-        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
         precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
         plt.figure()
         plt.plot(recall, precision, label="Precision-Recall Curve")
